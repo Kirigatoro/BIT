@@ -68,21 +68,17 @@ lambda_steps = [dist.copy()]
 for step in range(n - 1):
     print(f"\nРелаксация при шаге L ≤ {step + 1}")
     updated = False
-    # Делаем копию dist на начало шага
-    prev_dist = dist.copy()
-    # Перебираем все вершины v (кроме стартовой)
+    prev_dist = dist.copy()  # Копия dist на начало шага
     for v in range(n):
         if v == start:  # Пропускаем стартовую вершину
             continue
-        # На шаге L ≤ 1 учитываем только рёбра от стартовой вершины
         if step == 0:
             u_range = [start]  # Только стартовая вершина
         else:
             u_range = range(n)  # Все вершины
 
-        # Для каждой вершины v перебираем предшественников u
         for u in u_range:
-            if mat[u][v] != math.inf and prev_dist[u] != math.inf:  # Если ребро (u,v) существует
+            if mat[u][v] != math.inf and prev_dist[u] != math.inf:
                 new_dist = prev_dist[u] + mat[u][v]
                 print(f"Проверяем вершину x{v+1} через x{u+1}: λ^{step+1}(x{v+1}) = min(λ^{step}(x{v+1}), λ^{step}(x{u+1}) + w(x{u+1}, x{v+1}))")
                 print(f"λ^{step+1}(x{v+1}) = min({dist[v] if dist[v] != math.inf else '∞'}, {prev_dist[u]} + {mat[u][v]}) = {new_dist if new_dist < dist[v] else dist[v]}")
@@ -90,10 +86,16 @@ for step in range(n - 1):
                     dist[v] = new_dist
                     predecessor[v] = u
                     updated = True
+    
+    lambda_steps.append(dist.copy())
+    # Проверяем, изменилась ли лямбда по сравнению с предыдущим шагом
+    if dist == prev_dist:
+        print("Лямбда не изменилась, завершаем релаксацию.")
+        break
     if not updated:
         print("Обновлений не произошло.")
-    lambda_steps.append(dist.copy())
 
+# Проверка на отрицательные циклы
 for v in range(n):
     for u in range(n):
         if mat[u][v] != math.inf and dist[u] != math.inf and dist[u] + mat[u][v] < dist[v]:
