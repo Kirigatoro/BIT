@@ -2,105 +2,113 @@ import math
 import pandas as pd  # type: ignore
 
 def print_matrix(matrix, title="Матрица весов"):
-    """Функция для красивого вывода матрицы"""
     print(f"\n{title}:")
     n = len(matrix)
-    print("   " + "  ".join(f"{i+1:>3}" for i in range(n)))  # Заголовок столбцов
+    print("   " + "  ".join(f"{i+1:>3}" for i in range(n)))
     for i, row in enumerate(matrix):
         formatted_row = "  ".join(f"{val if val != math.inf else '∞':>3}" for val in row)
         print(f"{i+1:>2} {formatted_row}")
 
 def reconstruct_path(predecessor, start, end):
-    """Функция для восстановления маршрута"""
     path = []
     current = end
     while current is not None:
-        path.append(current + 1)  # +1, чтобы вернуть индексацию в нормальный вид
+        path.append(current + 1)
         current = predecessor[current]
     path.reverse()
     return path
 
+def calculate_path_weight(matrix, path):
+    weight = 0
+    for i in range(len(path) - 1):
+        u = path[i] - 1
+        v = path[i + 1] - 1
+        weight += matrix[u][v]
+    return weight
+
+def calculate_path_length(path):
+    return len(path) - 1
+
 def input_graph():
-    """Функция для ввода графа с клавиатуры"""
     n = int(input("Введите количество вершин: "))
     mat = [[math.inf] * n for _ in range(n)]
-    
     print("Введите рёбра в формате 'откуда куда вес'. Для завершения введите 'done'.")
-    
     while True:
         line = input()
         if line.lower() == "done":
             break
         try:
             u, v, w = map(float, line.split())
-            u, v = int(u) - 1, int(v) - 1  # Переключение на индексы
+            u, v = int(u) - 1, int(v) - 1
             mat[u][v] = w
         except ValueError:
             print("Ошибка ввода! Введите три числа: откуда, куда, вес.")
-
     return mat
 
-# Предопределённая матрица весов (из изображения)
 default_mat = [
     [math.inf,        5,        2,        5,       12, math.inf],
     [math.inf, math.inf, math.inf, math.inf, math.inf,        2],
     [math.inf,        2, math.inf,        1, math.inf, math.inf],
     [math.inf, math.inf, math.inf, math.inf, math.inf,        2],
     [math.inf, math.inf, math.inf, math.inf, math.inf, math.inf],
-    [math.inf, math.inf, math.inf, math.inf,        2, math.inf]
-]
+    [math.inf, math.inf, math.inf, math.inf,        2, math.inf]]
 
-# Запрос на ввод графа
 choice = input("Использовать предопределённый граф? (y/n): ").strip().lower()
 mat = input_graph() if choice == "n" else default_mat
-
-# Количество вершин
 n = len(mat)
-
-# Ввод стартовой и конечной вершины
 start = int(input(f"Введите стартовую вершину (1-{n}): ")) - 1
 end = int(input(f"Введите конечную вершину (1-{n}): ")) - 1
 
-# Вывод матрицы весов
 print_matrix(mat, "Матрица весов (W)")
-
-# Инициализация расстояний и предков
 dist = [math.inf] * n
-predecessor = [None] * n  # Хранит предшественника для каждой вершины
+predecessor = [None] * n
 dist[start] = 0
+lambda_steps = [dist.copy()]
 
-# Список рёбер
-edges = [(u, v, mat[u][v]) for u in range(n) for v in range(n) if mat[u][v] != math.inf]
+for step in range(n - 1):
+    print(f"\nРелаксация при шаге L ≤ {step + 1}")
+    updated = False
+    # Делаем копию dist на начало шага
+    prev_dist = dist.copy()
+    # Перебираем все вершины v (кроме стартовой)
+    for v in range(n):
+        if v == start:  # Пропускаем стартовую вершину
+            continue
+        # На шаге L ≤ 1 учитываем только рёбра от стартовой вершины
+        if step == 0:
+            u_range = [start]  # Только стартовая вершина
+        else:
+            u_range = range(n)  # Все вершины
 
-# Список для хранения шагов релаксации
-lambda_steps = []
+        # Для каждой вершины v перебираем предшественников u
+        for u in u_range:
+            if mat[u][v] != math.inf and prev_dist[u] != math.inf:  # Если ребро (u,v) существует
+                new_dist = prev_dist[u] + mat[u][v]
+                print(f"Проверяем вершину x{v+1} через x{u+1}: λ^{step+1}(x{v+1}) = min(λ^{step}(x{v+1}), λ^{step}(x{u+1}) + w(x{u+1}, x{v+1}))")
+                print(f"λ^{step+1}(x{v+1}) = min({dist[v] if dist[v] != math.inf else '∞'}, {prev_dist[u]} + {mat[u][v]}) = {new_dist if new_dist < dist[v] else dist[v]}")
+                if new_dist < dist[v]:
+                    dist[v] = new_dist
+                    predecessor[v] = u
+                    updated = True
+    if not updated:
+        print("Обновлений не произошло.")
+    lambda_steps.append(dist.copy())
 
-# Алгоритм Форда-Беллмана с сохранением промежуточных состояний
-for _ in range(n - 1):
-    for u, v, w in edges:
-        if dist[u] != math.inf and dist[u] + w < dist[v]:
-            dist[v] = dist[u] + w
-            predecessor[v] = u  # Запоминаем, откуда пришли
-    lambda_steps.append(dist.copy())  # Сохраняем текущее состояние
+for v in range(n):
+    for u in range(n):
+        if mat[u][v] != math.inf and dist[u] != math.inf and dist[u] + mat[u][v] < dist[v]:
+            print("Граф содержит отрицательный цикл!")
+            break
 
-# Проверка на отрицательные циклы
-for u, v, w in edges:
-    if dist[u] != math.inf and dist[u] + w < dist[v]:
-        print("Граф содержит отрицательный цикл!")
-        break
+df_lambda_steps = pd.DataFrame(lambda_steps).T
+df_lambda_steps.columns = [f"Шаг {i}" for i in range(len(lambda_steps))]
+df_lambda_steps.index = [f"x{i+1}" for i in range(n)]
+print("\nТаблица лямбда (λ) по шагам релаксации (инвертированная):")
+print(df_lambda_steps)
 
-# Создание DataFrame с шагами релаксации
-df_lambda_steps = pd.DataFrame(lambda_steps, columns=[f"x{i+1}" for i in range(n)])
-df_lambda_steps.index = [f"Шаг {i+1}" for i in range(len(lambda_steps))]
-
-print("\nТаблица лямбда (λ) по шагам релаксации:")
-print(df_lambda_steps.T)
-
-# Восстановление маршрута
-if dist[end] == math.inf:
-    print(f"Из вершины {start+1} в вершину {end+1} пути нет.")
-else:
-    path = reconstruct_path(predecessor, start, end)
-    print(f"\nКратчайший путь из {start+1} в {end+1}: {' → '.join(map(str, path))}")
-    print(f"Длина пути: {len(path) - 1}")
-    print(f"Вес пути: {dist[end]}")
+path = reconstruct_path(predecessor, start, end)
+path_weight = calculate_path_weight(mat, path)
+path_length = calculate_path_length(path)
+print(f"\nКратчайший путь от {start+1} до {end+1}: {' -> '.join(map(str, path))}")
+print(f"Длина пути (количество рёбер): {path_length}")
+print(f"Вес пути (сумма весов рёбер): {path_weight}")
