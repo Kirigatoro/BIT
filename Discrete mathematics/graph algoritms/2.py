@@ -1,74 +1,106 @@
-import pandas as pd
-import string
-import math  # Для использования math.inf вместо 10000
+import math
+import pandas as pd  # type: ignore
 
-# Создаем список букв английского алфавита
-letters = list(string.ascii_lowercase)
+def print_matrix(matrix, title="Матрица весов"):
+    """Функция для красивого вывода матрицы"""
+    print(f"\n{title}:")
+    n = len(matrix)
+    print("   " + "  ".join(f"{i+1:>3}" for i in range(n)))  # Заголовок столбцов
+    for i, row in enumerate(matrix):
+        formatted_row = "  ".join(f"{val if val != math.inf else '∞':>3}" for val in row)
+        print(f"{i+1:>2} {formatted_row}")
 
-count_of_dots = 7
-digit_to_letter = {i + 1: letters[i] for i in range(count_of_dots)}
+def reconstruct_path(predecessor, start, end):
+    """Функция для восстановления маршрута"""
+    path = []
+    current = end
+    while current is not None:
+        path.append(current + 1)  # +1, чтобы вернуть индексацию в нормальный вид
+        current = predecessor[current]
+    path.reverse()
+    return path
 
-# Матрица смежности (10000 заменены на math.inf)
-mat = [
-    [math.inf, 4.0,    math.inf, math.inf, math.inf, math.inf, math.inf],
-    [math.inf, math.inf, math.inf, math.inf, 4.5,    math.inf, math.inf],
-    [math.inf, math.inf, math.inf, math.inf, math.inf, math.inf, math.inf],
-    [math.inf, 7.5,    math.inf, math.inf, 3.5,    math.inf, 4.5],
-    [6,       math.inf, 3.5,    math.inf, math.inf, 6.5,    math.inf],
-    [math.inf, math.inf, math.inf, math.inf, math.inf, math.inf, math.inf],
-    [math.inf, math.inf, math.inf, math.inf, 0,      math.inf, math.inf]
+def input_graph():
+    """Функция для ввода графа с клавиатуры"""
+    n = int(input("Введите количество вершин: "))
+    mat = [[math.inf] * n for _ in range(n)]
+    
+    print("Введите рёбра в формате 'откуда куда вес'. Для завершения введите 'done'.")
+    
+    while True:
+        line = input()
+        if line.lower() == "done":
+            break
+        try:
+            u, v, w = map(float, line.split())
+            u, v = int(u) - 1, int(v) - 1  # Переключение на индексы
+            mat[u][v] = w
+        except ValueError:
+            print("Ошибка ввода! Введите три числа: откуда, куда, вес.")
+
+    return mat
+
+# Предопределённая матрица весов (из изображения)
+default_mat = [
+    [math.inf,        5,        2,        5,       12, math.inf],
+    [math.inf, math.inf, math.inf, math.inf, math.inf,        2],
+    [math.inf,        2, math.inf,        1, math.inf, math.inf],
+    [math.inf, math.inf, math.inf, math.inf, math.inf,        2],
+    [math.inf, math.inf, math.inf, math.inf, math.inf, math.inf],
+    [math.inf, math.inf, math.inf, math.inf,        2, math.inf]
 ]
 
-# Создаем DataFrame с названиями столбцов и индексов 'a'-'g'
-df = pd.DataFrame(mat, 
-                 index=["a", "b", "c", "d", "e", "f", "g"], 
-                 columns=["a", "b", "c", "d", "e", "f", "g"])
-print("Матрица смежности:")
-print(df)
+# Запрос на ввод графа
+choice = input("Использовать предопределённый граф? (y/n): ").strip().lower()
+mat = input_graph() if choice == "n" else default_mat
 
-# Начальные значения λ
-l0 = [math.inf, math.inf, math.inf, 0, math.inf, math.inf, math.inf]
+# Количество вершин
+n = len(mat)
 
-lambd = pd.DataFrame(l0, 
-                    index=["a", "b", "c", "d", "e", "f", "g"], 
-                    columns=[0])
-print("\nНачальные значения λ:")
-print(lambd)
+# Ввод стартовой и конечной вершины
+start = int(input(f"Введите стартовую вершину (1-{n}): ")) - 1
+end = int(input(f"Введите конечную вершину (1-{n}): ")) - 1
 
-flag = 5  # Количество итераций
-counter = 0
-print()
+# Вывод матрицы весов
+print_matrix(mat, "Матрица весов (W)")
 
-while flag > 0:
-    print(f"\033[34m>>>>>>>>>>>>>>>>>>>> Релаксация при {counter+1} шаге\033[0m")
-    pred = lambd[counter].tolist()
-    tec = l0.copy()  # Создаем копию, чтобы не изменять исходный список
-    
-    for i in range(count_of_dots):
-        if i == 3:  # Для вершины 'd' значение всегда 0
-            tec[i] = 0
-        else:
-            # Берем столбец, соответствующий текущей вершине
-            current_vertex = letters[i]
-            now = df[current_vertex].tolist()
-            print(f"\nРасчет для вершины {current_vertex.upper()}: {now}")
-            
-            minimum = math.inf
-            for j in range(count_of_dots):
-                if now[j] != math.inf:
-                    new_min = min(pred[j] + now[j], pred[i])
-                    print(f"min(λ[{j}] + w, λ[{i}]) = min({pred[j]} + {now[j]}, {pred[i]}) = {new_min}")
-                    if new_min < minimum:
-                        minimum = new_min
-            print(f"Итоговый минимум для {current_vertex.upper()}: {minimum}")
-            tec[i] = minimum
-    
-    lambd[counter+1] = tec
-    print("\nРезультат после итерации:")
-    print(lambd)
-    
-    counter += 1
-    flag -= 1
+# Инициализация расстояний и предков
+dist = [math.inf] * n
+predecessor = [None] * n  # Хранит предшественника для каждой вершины
+dist[start] = 0
 
-print("\nФинальная таблица λ:")
-print(lambd)
+# Список рёбер
+edges = [(u, v, mat[u][v]) for u in range(n) for v in range(n) if mat[u][v] != math.inf]
+
+# Список для хранения шагов релаксации
+lambda_steps = []
+
+# Алгоритм Форда-Беллмана с сохранением промежуточных состояний
+for _ in range(n - 1):
+    for u, v, w in edges:
+        if dist[u] != math.inf and dist[u] + w < dist[v]:
+            dist[v] = dist[u] + w
+            predecessor[v] = u  # Запоминаем, откуда пришли
+    lambda_steps.append(dist.copy())  # Сохраняем текущее состояние
+
+# Проверка на отрицательные циклы
+for u, v, w in edges:
+    if dist[u] != math.inf and dist[u] + w < dist[v]:
+        print("Граф содержит отрицательный цикл!")
+        break
+
+# Создание DataFrame с шагами релаксации
+df_lambda_steps = pd.DataFrame(lambda_steps, columns=[f"x{i+1}" for i in range(n)])
+df_lambda_steps.index = [f"Шаг {i+1}" for i in range(len(lambda_steps))]
+
+print("\nТаблица лямбда (λ) по шагам релаксации:")
+print(df_lambda_steps.T)
+
+# Восстановление маршрута
+if dist[end] == math.inf:
+    print(f"Из вершины {start+1} в вершину {end+1} пути нет.")
+else:
+    path = reconstruct_path(predecessor, start, end)
+    print(f"\nКратчайший путь из {start+1} в {end+1}: {' → '.join(map(str, path))}")
+    print(f"Длина пути: {len(path) - 1}")
+    print(f"Вес пути: {dist[end]}")
