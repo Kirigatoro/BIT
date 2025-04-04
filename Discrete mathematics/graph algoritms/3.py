@@ -1,5 +1,39 @@
 import pandas as pd
 
+def input_adjacency_table():
+    """
+    Запрашивает таблицу смежности у пользователя через терминал.
+    """
+    # Запрашиваем количество вершин
+    while True:
+        try:
+            vertex_count = int(input("Введите количество вершин: "))
+            if vertex_count <= 0:
+                print("Количество вершин должно быть положительным числом.")
+                continue
+            break
+        except ValueError:
+            print("Пожалуйста, введите целое число.")
+
+    # Создаем список вершин (a, b, c, ...)
+    vertices = [chr(97 + i) for i in range(vertex_count)]  # a=97 в ASCII
+    table = []
+
+    # Запрашиваем дуги для каждой вершины
+    print("Введите смежные вершины для каждой вершины (через пробел, например: b c).")
+    print("Если дуг нет, просто нажмите Enter.")
+    for vertex in vertices:
+        while True:
+            edges = input(f"Смежные вершины для {vertex}: ").strip().split()
+            # Проверяем, что введенные вершины корректны
+            if all(edge in vertices or not edge for edge in edges):
+                table.append([vertex] + edges)
+                break
+            else:
+                print(f"Ошибка: используйте только вершины из {vertices}.")
+
+    return table
+
 def create_adjacency_matrix(table):
     """
     Преобразует таблицу смежности в матрицу смежности и возвращает её как DataFrame.
@@ -42,9 +76,9 @@ def is_safe_to_add(vertex, matrix, path, position):
         return False
     return True
 
-def find_all_hamiltonian_cycles(matrix, vertex_count, path, position, all_cycles):
+def find_all_hamiltonian_cycles(matrix, vertex_count, path, position, all_cycles, steps, cycle_steps):
     """
-    Рекурсивно ищет все гамильтоновы циклы в графе.
+    Рекурсивно ищет все гамильтоновы циклы и записывает шаги их построения.
     """
     # Если все вершины посещены
     if position == vertex_count:
@@ -52,46 +86,50 @@ def find_all_hamiltonian_cycles(matrix, vertex_count, path, position, all_cycles
         if matrix.iloc[path[position - 1], path[0]] == 1:
             cycle = [matrix.index[vertex] for vertex in path] + [matrix.index[path[0]]]
             all_cycles.append(cycle)
+            cycle_steps.append(steps[:])  # Сохраняем копию шагов для этого цикла
         return
 
     # Перебираем все вершины
     for vertex in range(vertex_count):
         if is_safe_to_add(vertex, matrix, path, position):
             path[position] = vertex
-            find_all_hamiltonian_cycles(matrix, vertex_count, path, position + 1, all_cycles)
+            current_path = [matrix.index[v] for v in path[:position + 1]]
+            steps.append(f"Добавлена вершина {matrix.index[vertex]}, путь: {' -> '.join(current_path)}")
+            find_all_hamiltonian_cycles(matrix, vertex_count, path, position + 1, all_cycles, steps, cycle_steps)
             path[position] = -1  # Откатываем для поиска других решений
+            steps.pop()  # Убираем шаг добавления перед возвратом
 
 def find_hamiltonian_cycles(matrix):
     """
-    Основная функция для поиска и вывода всех гамильтоновых циклов.
+    Основная функция для поиска и вывода всех гамильтоновых циклов с таблицей шагов.
     """
     vertex_count = len(matrix)
     path = [-1] * vertex_count
     path[0] = 0  # Начинаем с первой вершины
     all_cycles = []
+    steps = [f"Начало с вершины {matrix.index[0]}"]
+    cycle_steps = []  # Список шагов для каждого цикла
 
-    find_all_hamiltonian_cycles(matrix, vertex_count, path, 1, all_cycles)
+    find_all_hamiltonian_cycles(matrix, vertex_count, path, 1, all_cycles, steps, cycle_steps)
 
     if not all_cycles:
         print("\nГамильтонов цикл не существует")
         return None
 
     print("\nВсе гамильтоновы циклы:")
-    for number, cycle in enumerate(all_cycles, 1):
-        print(f"Цикл {number}: {' -> '.join(cycle)}")
+    for number, (cycle, cycle_step) in enumerate(zip(all_cycles, cycle_steps), 1):
+        print(f"\nЦикл {number}: {' -> '.join(cycle)}")
+        print(f"Таблица шагов для цикла {number}:")
+        step_table = pd.DataFrame({
+            "Шаг": range(1, len(cycle_step) + 1),
+            "Действие": cycle_step
+        })
+        print(step_table.to_string(index=False))
+
     return all_cycles
 
-# Пример таблицы смежности
-table = [
-    ['a', 'b'],
-    ['b', 'c', 'e'],
-    ['c', 'a', 'd'],
-    ['d', 'c', 'f'],
-    ['e', 'c', 'd'],
-    ['f', 'a', 'b', 'c']
-]
-
-# Запуск программы
+# Запуск программы с вводом таблицы вручную
+table = input_adjacency_table()
 graph_matrix, indices = create_adjacency_matrix(table)
 print_matrix(graph_matrix)
 find_hamiltonian_cycles(graph_matrix)
