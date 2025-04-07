@@ -133,19 +133,50 @@ def kruskal_mst(graph, V):
     df_mst = pd.DataFrame(final_mst_data)
     print(df_mst.to_string(index=False))
 
-# Ввод данных (задаём напрямую для примера)
-V = 6  # Вершины: a, b, c, d, e, f
-graph = [
-    [0, 1, 25],  # a-b
-    [0, 2, 10],  # a-c
-    [0, 3, 23],  # a-d
-    [0, 5, 22],  # a-f
-    [1, 3, 15],  # b-d
-    [1, 4, 6],   # b-e
-    [2, 3, 16],  # c-d
-    [2, 4, 5],   # c-e
-    [2, 5, 24]   # c-f
-]
+# Ввод данных
+print("Введите количество вершин (максимум 26):")
+V = int(input())
+if V > 26:
+    print("Ошибка: поддерживается максимум 26 вершин (a-z)")
+    exit()
+
+print("Доступные вершины:", " ".join(chr(97 + i) for i in range(V)))
+print("Введите количество рёбер:")
+E = int(input())
+
+graph = []
+print("Вводите рёбра в формате 'вершина1 вершина2 вес' (например, 'a b 4'):")
+for _ in range(E):
+    try:
+        input_str = input().split()
+        if len(input_str) != 3:
+            print("Ошибка: введите две вершины и вес через пробел")
+            continue
+            
+        u_str, v_str, w_str = input_str
+        w = int(w_str)
+        
+        if len(u_str) != 1 or len(v_str) != 1:
+            print("Ошибка: используйте одиночные буквы для вершин")
+            continue
+            
+        u = ord(u_str.lower()) - 97
+        v = ord(v_str.lower()) - 97
+        
+        if u >= V or v >= V or u < 0 or v < 0:
+            print("Ошибка: используйте вершины из диапазона a-", chr(96 + V))
+            continue
+            
+        graph.append([u, v, w])
+    except ValueError:
+        print("Ошибка: вес должен быть числом")
+        continue
+    except:
+        print("Ошибка ввода")
+        continue
 
 # Запуск алгоритма
-kruskal_mst(graph, V)
+if graph:
+    kruskal_mst(graph, V)
+else:
+    print("Граф пустой")
