@@ -104,6 +104,7 @@ else:
     print(formula_pg)
     print("\nСокращенная дизъюнктивная нормальная форма записи формулы Πg:")
     print(shortened_dnf)
+    print("не забудьте про * в формуле!")
     print("\nВсе максимальные ВУМ и их дополнения:")
     print(df_results.to_string(index=False))
     print("\nНаибольшие ВУМ:")
