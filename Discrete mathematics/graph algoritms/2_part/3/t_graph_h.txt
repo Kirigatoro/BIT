@@ -1,0 +1,49 @@
+# Шаблон для ввода графа
+# Количество вершин (n): указано в программе
+# Формат:
+# Для каждой вершины укажите дуги, ребра и петли.
+# Дуги: vertex -> j количество_дуг (например, "f 1")
+# Ребра: {vertex, j} количество_ребер (например, "f 1")
+# Петли: количество_петель (например, "1")
+# Если связей нет, оставьте пустую строку или напишите "none".
+# Разделяйте секции пустой строкой.
+
+[vertex a]
+arcs: b 1; c 1
+edges: d 1; e 2
+loops: 1
+
+[vertex b]
+arcs: d 1; f 1
+edges: h 1
+loops: 0
+
+[vertex c]
+arcs: b 1; g 1
+edges: e 1
+loops: 0
+
+[vertex d]
+arcs: c 1; h 1
+edges: a 1
+loops: 0
+
+[vertex e]
+arcs: d 1; f 1
+edges: a 2; c 1
+loops: 1
+
+[vertex f]
+arcs: a 1; h 1
+edges: g 1
+loops: 0
+
+[vertex g]
+arcs: a 1; e 1
+edges: f 1
+loops: 0
+
+[vertex h]
+arcs: e 1; g 1
+edges: b 1
+loops: 0
