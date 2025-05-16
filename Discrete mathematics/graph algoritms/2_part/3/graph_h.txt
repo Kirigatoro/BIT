@@ -1,32 +1,32 @@
-A
-	arcs: B 1; C 1
-	edges: D 1; E 2
+a
+	arcs: none
+	edges: e 1; f 1
+	loops: 0
+b
+	arcs: c 1
+	edges: e 2
+	loops: 0
+c
+	arcs: f 1
+	edges: d 1; h 1
+	loops: 2
+d
+	arcs: none
+	edges: c 1
 	loops: 1
-B
-	arcs: D 1; F 1
-	edges: H 1
+e
+	arcs: none
+	edges: b 2; a 1; h 1
 	loops: 0
-C
-	arcs: B 1; G 1
-	edges: E 1
-	loops: 0
-D
-	arcs: C 1; H 1
-	edges: A 1
-	loops: 0
-E
-	arcs: D 1; F 1
-	edges: A 2; C 1
+f
+	arcs: none
+	edges: a 1
 	loops: 1
-F
-	arcs: A 1; H 1
-	edges: G 1
+g
+	arcs: a 1
+	edges: h 1
 	loops: 0
-G
-	arcs: A 1; E 1
-	edges: F 1
-	loops: 0
-H
-	arcs: E 1; G 1
-	edges: B 1
+h
+	arcs: none
+	edges: c 1; e 1; g 1
 	loops: 0

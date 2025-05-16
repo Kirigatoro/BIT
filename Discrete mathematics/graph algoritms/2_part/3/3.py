@@ -110,8 +110,8 @@ def build_s_k(s0, p, vertex_list):
 
 
 def main():
-	graph_g = "graph_g.txt"
-	graph_h = "graph_h.txt"
+	graph_g = "graph_g_t.txt"
+	graph_h = "graph_h_t.txt"
 	pg = [0]
 	ph = [0]
 
